@@ -47,6 +47,7 @@ class Campo {
   }
 
   void abrir() {
+    if (_marcado) return;
     if (_aberto) return;
 
     _aberto = true;

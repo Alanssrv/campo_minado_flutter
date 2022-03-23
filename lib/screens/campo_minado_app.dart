@@ -1,22 +1,66 @@
 import 'package:campo_minado/components/resultado_widget.dart';
 import 'package:campo_minado/components/tabuleiro_widget.dart';
 import 'package:campo_minado/models/campo.dart';
+import 'package:campo_minado/models/explosao_exception.dart';
 import 'package:campo_minado/models/tabuleiro.dart';
 import 'package:flutter/material.dart';
 
-class CampoMinadoApp extends StatelessWidget {
+class CampoMinadoApp extends StatefulWidget {
   const CampoMinadoApp({Key? key}) : super(key: key);
 
+  @override
+  State<CampoMinadoApp> createState() => _CampoMinadoAppState();
+}
+
+class _CampoMinadoAppState extends State<CampoMinadoApp> {
+  bool? _venceu;
+  Tabuleiro? _tabuleiro;
+
   void _reiniciar() {
-    print('reinicar');
+    setState(() {
+      _venceu = null;
+      _tabuleiro!.reiniciar();
+    });
   }
 
   void _abrir(Campo campo) {
-    print('_abrir');
+    if (_venceu != null) return;
+    setState(() {
+      try {
+        campo.abrir();
+        if (_tabuleiro!.resolvido) {
+          _venceu = true;
+        }
+      } on ExplosaoException {
+        _venceu = false;
+        _tabuleiro!.revelarBombas();
+      }
+    });
   }
 
   void _alternarMarcacao(Campo campo) {
-    print('_alternarMarcacao');
+    if (_venceu != null) return;
+    setState(() {
+      campo.altenarMarcacao();
+      if (_tabuleiro!.resolvido) {
+        _venceu = true;
+      }
+    });
+  }
+
+  Tabuleiro _getTabuleiro(double largura, double altura) {
+    if (_tabuleiro == null) {
+      int qtdColunas = 15;
+      double tamanhoCampo = largura / qtdColunas;
+      int qtdLinhas = (altura / tamanhoCampo).floor();
+
+      _tabuleiro = Tabuleiro(
+        linhas: qtdLinhas,
+        colunas: qtdColunas,
+        qtdBombas: (qtdLinhas * qtdColunas * 0.10).floor(),
+      );
+    }
+    return _tabuleiro!;
   }
 
   @override
@@ -24,18 +68,22 @@ class CampoMinadoApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: ResultadoWidget(
-          venceu: true,
+          venceu: _venceu,
           reiniciar: _reiniciar,
         ),
         body: Container(
-          child: TabuleiroWidget(
-            tabuleiro: Tabuleiro(
-              linhas: 20,
-              colunas: 20,
-              qtdBombas: 0,
-            ),
-            abrir: _abrir,
-            altenarMarcacao: _alternarMarcacao,
+          color: Colors.grey,
+          child: LayoutBuilder(
+            builder: (ctx, constraints) {
+              return TabuleiroWidget(
+                tabuleiro: _getTabuleiro(
+                  constraints.maxWidth,
+                  constraints.maxHeight,
+                ),
+                abrir: _abrir,
+                altenarMarcacao: _alternarMarcacao,
+              );
+            },
           ),
         ),
       ),

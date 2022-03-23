@@ -13,6 +13,7 @@ class Tabuleiro {
       {required this.linhas, required this.colunas, required this.qtdBombas}) {
     _criarCampos();
     _relacionarVizinhos();
+    _sortearMinas();
   }
 
   List<Campo> get campos {
